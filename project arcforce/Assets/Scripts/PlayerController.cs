@@ -49,7 +49,7 @@ public class PlayerController : MonoBehaviour
             rb.velocity = Vector3.zero;
             rb.AddForce(-movement, ForceMode.VelocityChange);
 
-            CmdShoot(movement.normalized);
+            Shoot(movement.normalized);
 
             what = false;
         }
@@ -57,7 +57,7 @@ public class PlayerController : MonoBehaviour
         rb.AddForce(Vector3.down * gravitationalAcceleration, ForceMode.Force);
     }
 
-    private void CmdShoot(Vector3 lookDir)
+    private void Shoot(Vector3 lookDir)
     {
         //GameObject bulletGO = Instantiate(bulletPrefab, transform.position, Quaternion.LookRotation(lookDir, Vector3.forward));
         //bulletGO.GetComponent<Bullet>().SetOwner(gameObject);

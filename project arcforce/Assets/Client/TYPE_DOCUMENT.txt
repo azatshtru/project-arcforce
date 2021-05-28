@@ -1,0 +1,4 @@
+float DEC
+vector VEC
+ray RAY
+string STR

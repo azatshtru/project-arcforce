@@ -65,6 +65,12 @@ public class Client : MonoBehaviour
         SERVER_IP_ADDRESS = _ipAddress;
     }
 
+    public void SendVector (Vector3 vector)
+    {
+        byte[] vectorBytes = DataPacketConvertor.GetBytes(vector);
+        int bytesSend = socket.Send(vectorBytes);
+    }
+
     void RecieveData()
     {
         while (true)
