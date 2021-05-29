@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class ClientUI : MonoBehaviour
 {
     public GameObject clientUi;
-    public InputField ipAddressInputField;
+    public InputField nameInputField;
 
     private void Start()
     {
@@ -15,7 +15,7 @@ public class ClientUI : MonoBehaviour
 
     public void GetIPAddress()
     {
-        Client.Instance.SetIPAddress(ipAddressInputField.text);
+        Client.Instance.SetName(nameInputField.text);
     }
 
     public void DisableClientUI()

@@ -11,6 +11,10 @@ public static class DataPacketConvertor
         byte[] typeBytes = Encoding.ASCII.GetBytes(type);
 
         byte[] b_float = BitConverter.GetBytes(value);
+        if (BitConverter.IsLittleEndian)
+        {
+            Array.Reverse(b_float);
+        }
 
         byte[] decimalBytes = typeBytes.Concat(b_float).ToArray();
 

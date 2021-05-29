@@ -1,9 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Text;
+using System.Linq;
 using UnityEngine;
 
 public class Client : MonoBehaviour
@@ -12,9 +14,12 @@ public class Client : MonoBehaviour
 
     public string SERVER_IP_ADDRESS;
     public int PORT;
+    public string playerName;
     public NetworkPlayer playerPrefab;
 
     Socket socket;
+
+    NetworkPlayer selfPlayer;
 
     GameObject[] networkSpawns;
 
@@ -50,37 +55,83 @@ public class Client : MonoBehaviour
         Thread t1 = new Thread(job);
         t1.Start();
 
-        SpawnPlayer();
+        SpawnSelfPlayer();
         onPlayerSpawned();
     }
 
-    void SpawnPlayer()
+    void SpawnSelfPlayer()
     {
         //Calculate Occupied and Unoccupied Network Spawns
-        Instantiate(playerPrefab.gameObject, networkSpawns[Random.Range(0, networkSpawns.Length)].transform.position, Quaternion.identity);
+        GameObject playerGO = Instantiate(playerPrefab.gameObject, networkSpawns[UnityEngine.Random.Range(0, networkSpawns.Length)].transform.position, Quaternion.identity);
+        playerGO.name = playerName;
+        selfPlayer = playerGO.GetComponent<NetworkPlayer>();
     }
 
-    public void SetIPAddress(string _ipAddress)
+    public void SetName(string name)
     {
-        SERVER_IP_ADDRESS = _ipAddress;
+        playerName = name;
+    }
+
+    private byte[] GetSelfPlayerName()
+    {
+        byte[] playerNameLength = BitConverter.GetBytes(playerName.Length);
+        if (BitConverter.IsLittleEndian)
+        {
+            Array.Reverse(playerNameLength);
+        }
+        return playerNameLength.Concat(Encoding.ASCII.GetBytes(playerName)).ToArray();
     }
 
     public void SendVector (Vector3 vector)
     {
-        byte[] vectorBytes = DataPacketConvertor.GetBytes(vector);
-        int bytesSend = socket.Send(vectorBytes);
+        NetworkStream stream = new NetworkStream(socket);
+
+        byte[] vectorBytes = GetSelfPlayerName().Concat(DataPacketConvertor.GetBytes(vector)).ToArray();
+        stream.Write(vectorBytes, 0, vectorBytes.Length);
     }
 
     void RecieveData()
     {
+        NetworkStream stream = new NetworkStream(socket);
+
         while (true)
         {
             Thread.Sleep(250);
 
-            byte[] recievedBytes = new byte[1024];
-            int numBytes = socket.Receive(recievedBytes);
-            string recievedString = Encoding.ASCII.GetString(recievedBytes, 0, numBytes);
-            print(recievedString);
+            byte[] nameLengthBytes = new byte[4];
+            int numNameLengthBytes = stream.Read(nameLengthBytes, 0, nameLengthBytes.Length);
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(nameLengthBytes);
+            }
+            int nameLength = BitConverter.ToInt32(nameLengthBytes, 0);
+
+            byte[] nameBytes = new byte[nameLength];
+            int numNameBytes = stream.Read(nameBytes, 0, nameBytes.Length);
+
+            string incommingPlayerName = Encoding.ASCII.GetString(nameBytes, 0, numNameBytes);
+
+            byte[] typeBytes = new byte[3];
+            int numTypeBytes = stream.Read(typeBytes, 0, typeBytes.Length);
+
+            float[] vectorfloats = new float[3];
+
+            if(Encoding.ASCII.GetString(typeBytes, 0, numTypeBytes) == "VEC")
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    byte[] dataBytes = new byte[4];
+                    int bytesRead = stream.Read(dataBytes, 0, dataBytes.Length);
+                    if (BitConverter.IsLittleEndian)
+                    {
+                        Array.Reverse(dataBytes);
+                    }
+                    vectorfloats[i] = BitConverter.ToSingle(dataBytes, 0);
+                }
+                Vector3 recievedVector = new Vector3(vectorfloats[0], vectorfloats[1], vectorfloats[2]);
+                print(incommingPlayerName + recievedVector.ToString());
+            }
         }
     }
 

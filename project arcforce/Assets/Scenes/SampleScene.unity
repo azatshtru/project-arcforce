@@ -760,7 +760,7 @@ GameObject:
   - component: {fileID: 1174651164}
   - component: {fileID: 1174651163}
   m_Layer: 5
-  m_Name: IP Address_InputField
+  m_Name: Name_InputField
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -999,7 +999,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Server IP Address..
+  m_Text: Name
 --- !u!222 &1233090317
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1386,6 +1386,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SERVER_IP_ADDRESS: 192.168.0.100
   PORT: 5407
+  playerName: 
   playerPrefab: {fileID: 509479385580838617, guid: 242fb36c487404f4ca958839d4214c47,
     type: 3}
 --- !u!4 &2004854888
@@ -1415,4 +1416,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   clientUi: {fileID: 948453862}
-  ipAddressInputField: {fileID: 1174651163}
+  nameInputField: {fileID: 1174651163}
