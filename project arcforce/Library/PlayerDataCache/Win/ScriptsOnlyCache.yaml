@@ -4,6 +4,7 @@ ScriptsOnlyBuild:
     - Client
     - ClientUI
     - NetworkPlayer
+    - OtherPlayer
     - PlayerController
     Unity.Rider.Editor.dll:
     - Packages.Rider.Editor.UnitTesting.CallbackData
@@ -74,6 +75,8 @@ ScriptsOnlyBuild:
       Script: {instanceID: 13032}
     - Class: 114
       Script: {instanceID: 13052}
+    - Class: 114
+      Script: {instanceID: 15270}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -215,7 +218,7 @@ ScriptsOnlyBuild:
     className: PhysicsRaycaster
   - hash:
       serializedVersion: 2
-      Hash: 6008525f57b45d78dca3944f3bcfc64f
+      Hash: 31b74434e8b425c0c6244e5209a63356
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: Client
@@ -537,6 +540,12 @@ ScriptsOnlyBuild:
     assemblyName: Unity.Timeline.dll
     namespaceName: UnityEngine.Timeline
     className: PlayableTrack
+  - hash:
+      serializedVersion: 2
+      Hash: 71bb6a6b6c8f052f948db64c7dd3ca4f
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: OtherPlayer
   platform: 5
   scenePathNames:
   - Assets/Scenes/SampleScene.unity

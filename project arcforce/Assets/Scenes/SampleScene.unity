@@ -1389,6 +1389,8 @@ MonoBehaviour:
   playerName: 
   playerPrefab: {fileID: 509479385580838617, guid: 242fb36c487404f4ca958839d4214c47,
     type: 3}
+  otherPlayerPrefab: {fileID: 4134858388757475317, guid: 821b628b8bc698e43a47c3d4f7efea7d,
+    type: 3}
 --- !u!4 &2004854888
 Transform:
   m_ObjectHideFlags: 0

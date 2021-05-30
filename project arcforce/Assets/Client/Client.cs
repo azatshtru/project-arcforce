@@ -16,6 +16,7 @@ public class Client : MonoBehaviour
     public int PORT;
     public string playerName;
     public NetworkPlayer playerPrefab;
+    public OtherPlayer otherPlayerPrefab;
 
     Socket socket;
 
@@ -23,8 +24,16 @@ public class Client : MonoBehaviour
 
     GameObject[] networkSpawns;
 
+    List<string> playerNamesList = new List<string>();
+    List<OtherPlayer> otherPlayers = new List<OtherPlayer>();
+
     public delegate void PlayerSpawnDelegate();
     public static event PlayerSpawnDelegate onPlayerSpawned;
+
+    string latestSender;
+    KeyValuePair<string, Vector3> latestVector = new KeyValuePair<string, Vector3>();
+    bool isNAM;
+    bool isVEC;
 
     private void Awake()
     {
@@ -61,10 +70,15 @@ public class Client : MonoBehaviour
 
     void SpawnSelfPlayer()
     {
-        //Calculate Occupied and Unoccupied Network Spawns
+        //TODO: Calculate Occupied and Unoccupied Network Spawns
+
         GameObject playerGO = Instantiate(playerPrefab.gameObject, networkSpawns[UnityEngine.Random.Range(0, networkSpawns.Length)].transform.position, Quaternion.identity);
         playerGO.name = playerName;
         selfPlayer = playerGO.GetComponent<NetworkPlayer>();
+
+        playerNamesList.Add(playerName);
+
+        SendSelfPlayer();
     }
 
     public void SetName(string name)
@@ -82,12 +96,62 @@ public class Client : MonoBehaviour
         return playerNameLength.Concat(Encoding.ASCII.GetBytes(playerName)).ToArray();
     }
 
+    public void SendSelfPlayer()
+    {
+        NetworkStream stream = new NetworkStream(socket);
+
+        byte[] nameBytes = GetSelfPlayerName().Concat(Encoding.ASCII.GetBytes("NAM")).ToArray();
+        stream.Write(nameBytes, 0, nameBytes.Length);
+
+        stream.Close();
+    }
+
     public void SendVector (Vector3 vector)
     {
         NetworkStream stream = new NetworkStream(socket);
 
         byte[] vectorBytes = GetSelfPlayerName().Concat(DataPacketConvertor.GetBytes(vector)).ToArray();
         stream.Write(vectorBytes, 0, vectorBytes.Length);
+
+        stream.Close();
+    }
+
+    void InstantiateIncommingPlayer(string _name)
+    {
+        if (playerNamesList.Contains(_name))
+        {
+            return;
+        }
+
+        GameObject otherPlayer = Instantiate(otherPlayerPrefab.gameObject, otherPlayerPrefab.transform.position, Quaternion.identity);
+        otherPlayer.name = _name;
+        otherPlayer.GetComponent<OtherPlayer>().SetOtherName(_name);
+
+        otherPlayers.Add(otherPlayer.GetComponent<OtherPlayer>());
+        playerNamesList.Add(_name);
+
+        SendSelfPlayer();
+    }
+
+    void SetOtherPlayerPosition(KeyValuePair<string, Vector3> vec)
+    {
+        foreach(OtherPlayer p in otherPlayers)
+        {
+            if(p.GetOtherName() == vec.Key)
+            {
+                p.SetOtherPosition(vec.Value);
+            }
+        }
+    }
+
+    public string GetSenderName(NetworkStream stream)
+    {
+        byte[] nameLengthBytes = new byte[4];
+        int numNameLengthBytes = stream.Read(nameLengthBytes, 0, nameLengthBytes.Length);
+
+        byte[] nameBytes = new byte[DataPacketConvertor.GetInt(nameLengthBytes)];
+        int numNameBytes = stream.Read(nameBytes, 0, nameBytes.Length);
+        return DataPacketConvertor.GetString(nameBytes, numNameBytes);
     }
 
     void RecieveData()
@@ -96,47 +160,44 @@ public class Client : MonoBehaviour
 
         while (true)
         {
-            Thread.Sleep(250);
+            Thread.Sleep(30);
 
-            byte[] nameLengthBytes = new byte[4];
-            int numNameLengthBytes = stream.Read(nameLengthBytes, 0, nameLengthBytes.Length);
+            string senderName = GetSenderName(stream);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(nameLengthBytes);
-            }
-            int nameLength = BitConverter.ToInt32(nameLengthBytes, 0);
-
-            byte[] nameBytes = new byte[nameLength];
-            int numNameBytes = stream.Read(nameBytes, 0, nameBytes.Length);
-
-            string incommingPlayerName = Encoding.ASCII.GetString(nameBytes, 0, numNameBytes);
+            latestSender = senderName;
 
             byte[] typeBytes = new byte[3];
             int numTypeBytes = stream.Read(typeBytes, 0, typeBytes.Length);
+            string type = DataPacketConvertor.GetString(typeBytes, numTypeBytes);
 
-            float[] vectorfloats = new float[3];
-
-            if(Encoding.ASCII.GetString(typeBytes, 0, numTypeBytes) == "VEC")
+            if (type == "NAM")
             {
-                for (int i = 0; i < 3; i++)
-                {
-                    byte[] dataBytes = new byte[4];
-                    int bytesRead = stream.Read(dataBytes, 0, dataBytes.Length);
-                    if (BitConverter.IsLittleEndian)
-                    {
-                        Array.Reverse(dataBytes);
-                    }
-                    vectorfloats[i] = BitConverter.ToSingle(dataBytes, 0);
-                }
-                Vector3 recievedVector = new Vector3(vectorfloats[0], vectorfloats[1], vectorfloats[2]);
-                print(incommingPlayerName + recievedVector.ToString());
+                isNAM = true;
+            }
+
+            if (type == "VEC")
+            {
+                byte[] dataBytes = new byte[12];
+                int bytesRead = stream.Read(dataBytes, 0, dataBytes.Length);
+
+                latestVector = new KeyValuePair<string, Vector3>(senderName, DataPacketConvertor.GetVector(dataBytes));
+                isVEC = true;
             }
         }
     }
 
-    void Update()
+    private void Update()
     {
-        
+        if (isNAM)
+        {
+            InstantiateIncommingPlayer(latestSender);
+            isNAM = false;
+        }
+
+        if (isVEC)
+        {
+            SetOtherPlayerPosition(latestVector);
+            isVEC = false;
+        }
     }
 }
