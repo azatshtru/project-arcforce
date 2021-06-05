@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -14,11 +15,14 @@ public class Client : MonoBehaviour
 
     public string SERVER_IP_ADDRESS;
     public int PORT;
+    public int UDP_PORT;
     public string playerName;
     public NetworkPlayer playerPrefab;
     public OtherPlayer otherPlayerPrefab;
 
     Socket socket;
+    UdpClient udpClient;
+    IPEndPoint udpEndPoint;
 
     NetworkPlayer selfPlayer;
 
@@ -60,9 +64,17 @@ public class Client : MonoBehaviour
 
         Debug.Log($"Connected to {socket.RemoteEndPoint.ToString()}");
 
+        udpClient = new UdpClient();
+        udpEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP_ADDRESS), UDP_PORT);
+        udpClient.Connect(udpEndPoint);
+
         ThreadStart job = new ThreadStart(RecieveData);
         Thread t1 = new Thread(job);
         t1.Start();
+
+        ThreadStart udpJob = new ThreadStart(RecieveDataUDP);
+        Thread t2 = new Thread(udpJob);
+        t2.Start();
 
         SpawnSelfPlayer();
         onPlayerSpawned();
@@ -108,12 +120,17 @@ public class Client : MonoBehaviour
 
     public void SendVector (Vector3 vector)
     {
+        /*
         NetworkStream stream = new NetworkStream(socket);
 
         byte[] vectorBytes = GetSelfPlayerName().Concat(DataPacketConvertor.GetBytes(vector)).ToArray();
         stream.Write(vectorBytes, 0, vectorBytes.Length);
 
         stream.Close();
+        */
+
+        byte[] vectorBytes = GetSelfPlayerName().Concat(DataPacketConvertor.GetBytes(vector)).ToArray();
+        udpClient.Send(vectorBytes, vectorBytes.Length);
     }
 
     void InstantiateIncommingPlayer(string _name)
@@ -154,6 +171,16 @@ public class Client : MonoBehaviour
         return DataPacketConvertor.GetString(nameBytes, numNameBytes);
     }
 
+    public string GetSenderName(Stream stream)
+    {
+        byte[] nameLengthBytes = new byte[4];
+        int numNameLengthBytes = stream.Read(nameLengthBytes, 0, nameLengthBytes.Length);
+
+        byte[] nameBytes = new byte[DataPacketConvertor.GetInt(nameLengthBytes)];
+        int numNameBytes = stream.Read(nameBytes, 0, nameBytes.Length);
+        return DataPacketConvertor.GetString(nameBytes, numNameBytes);
+    }
+
     void RecieveData()
     {
         NetworkStream stream = new NetworkStream(socket);
@@ -174,6 +201,25 @@ public class Client : MonoBehaviour
             {
                 isNAM = true;
             }
+        }
+    }
+
+    void RecieveDataUDP()
+    {
+        
+        while (true)
+        {
+            //Thread.Sleep(30);
+
+            byte[] recievedBytes = udpClient.Receive(ref udpEndPoint);
+            Stream stream = new MemoryStream(recievedBytes);
+
+            string senderName = GetSenderName(stream);
+            latestSender = senderName;
+
+            byte[] typeBytes = new byte[3];
+            int numTypeBytes = stream.Read(typeBytes, 0, typeBytes.Length);
+            string type = DataPacketConvertor.GetString(typeBytes, numTypeBytes);
 
             if (type == "VEC")
             {
@@ -183,7 +229,12 @@ public class Client : MonoBehaviour
                 latestVector = new KeyValuePair<string, Vector3>(senderName, DataPacketConvertor.GetVector(dataBytes));
                 isVEC = true;
             }
+
+            stream.Flush();
+            stream.Dispose();
+            stream.Close();
         }
+        
     }
 
     private void Update()

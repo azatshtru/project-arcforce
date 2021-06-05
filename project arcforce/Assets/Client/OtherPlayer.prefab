@@ -123,3 +123,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24f0496d7e0504f4d9838513250f3796, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lagDistance: 20
+  stepSpeed: 16
