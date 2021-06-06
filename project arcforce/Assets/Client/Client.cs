@@ -21,6 +21,7 @@ public class Client : MonoBehaviour
     public OtherPlayer otherPlayerPrefab;
 
     Socket socket;
+    int SERVER_INT;
     UdpClient udpClient;
     IPEndPoint udpEndPoint;
 
@@ -53,6 +54,28 @@ public class Client : MonoBehaviour
         networkSpawns = GameObject.FindGameObjectsWithTag("NetworkSpawn");
     }
 
+    int GetServerInt()
+    {
+        byte[] serverIntBytes = new byte[7];
+        int serverIntByteLength = socket.Receive(serverIntBytes);
+
+        Stream stream = new MemoryStream(serverIntBytes);
+        byte[] nameBytes = new byte[6];
+        int numNameBytes = stream.Read(nameBytes, 0, nameBytes.Length);
+        string s_name = DataPacketConvertor.GetString(nameBytes, numNameBytes);
+
+        if(s_name == "server")
+        {
+            byte[] intBytes = new byte[1];
+            int numIntBytes = stream.Read(intBytes, 0, intBytes.Length);
+            stream.Close();
+            return int.Parse(DataPacketConvertor.GetString(intBytes, numIntBytes));
+        }
+
+        stream.Close();
+        return 0;
+    }
+
     public void ConnectToServer()
     {
         IPAddress ipAddress = IPAddress.Parse(SERVER_IP_ADDRESS);
@@ -68,6 +91,8 @@ public class Client : MonoBehaviour
         udpEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP_ADDRESS), UDP_PORT);
         udpClient.Connect(udpEndPoint);
 
+        SERVER_INT = GetServerInt();
+
         ThreadStart job = new ThreadStart(RecieveData);
         Thread t1 = new Thread(job);
         t1.Start();
@@ -82,9 +107,7 @@ public class Client : MonoBehaviour
 
     void SpawnSelfPlayer()
     {
-        //TODO: Calculate Occupied and Unoccupied Network Spawns
-
-        GameObject playerGO = Instantiate(playerPrefab.gameObject, networkSpawns[UnityEngine.Random.Range(0, networkSpawns.Length)].transform.position, Quaternion.identity);
+        GameObject playerGO = Instantiate(playerPrefab.gameObject, networkSpawns[SERVER_INT].transform.position, Quaternion.identity);
         playerGO.name = playerName;
         selfPlayer = playerGO.GetComponent<NetworkPlayer>();
 
