@@ -31,6 +31,7 @@ public class Client : MonoBehaviour
 
     List<string> playerNamesList = new List<string>();
     List<OtherPlayer> otherPlayers = new List<OtherPlayer>();
+    Dictionary<int, string> playerNamesDictionary = new Dictionary<int, string>();
 
     public delegate void PlayerSpawnDelegate();
     public static event PlayerSpawnDelegate onPlayerSpawned;
@@ -112,6 +113,7 @@ public class Client : MonoBehaviour
         selfPlayer = playerGO.GetComponent<NetworkPlayer>();
 
         playerNamesList.Add(playerName);
+        playerNamesDictionary.Add(SERVER_INT, playerName);
 
         SendSelfPlayer();
     }
@@ -135,7 +137,13 @@ public class Client : MonoBehaviour
     {
         NetworkStream stream = new NetworkStream(socket);
 
-        byte[] nameBytes = GetSelfPlayerName().Concat(Encoding.ASCII.GetBytes("NAM")).ToArray();
+        byte[] b_serverint = BitConverter.GetBytes(SERVER_INT);
+        if (BitConverter.IsLittleEndian)
+        {
+            Array.Reverse(b_serverint);
+        }
+
+        byte[] nameBytes = GetSelfPlayerName().Concat(Encoding.ASCII.GetBytes("NAM")).Concat(b_serverint).ToArray();
         stream.Write(nameBytes, 0, nameBytes.Length);
 
         stream.Close();
@@ -222,6 +230,15 @@ public class Client : MonoBehaviour
 
             if (type == "NAM")
             {
+                byte[] dataBytes = new byte[4];
+                int bytesRead = stream.Read(dataBytes, 0, dataBytes.Length);
+                int otherServerInt = DataPacketConvertor.GetInt(dataBytes);
+
+                if (!playerNamesDictionary.Values.Contains(senderName))
+                {
+                    playerNamesDictionary.Add(otherServerInt, senderName);
+                }
+
                 isNAM = true;
             }
         }
