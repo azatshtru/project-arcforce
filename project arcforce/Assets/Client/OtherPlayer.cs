@@ -15,6 +15,13 @@ public class OtherPlayer : MonoBehaviour
 
     Vector3 recievedPosition;
 
+    Health healthBehavior;
+
+    private void Start()
+    {
+        healthBehavior = GetComponent<Health>();
+    }
+
     public string GetOtherName()
     {
         return playerName;
@@ -34,6 +41,11 @@ public class OtherPlayer : MonoBehaviour
     {
         GameObject bulletGO = Instantiate(bulletPrefab, ray.origin, Quaternion.LookRotation(ray.direction, Vector3.forward));
         bulletGO.GetComponent<Bullet>().SetOwner(gameObject);
+    }
+
+    public void SetOtherHealth(float health)
+    {
+        healthBehavior.SetHealth(health);
     }
 
     private void Update()

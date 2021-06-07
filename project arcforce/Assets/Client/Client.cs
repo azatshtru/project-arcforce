@@ -39,9 +39,11 @@ public class Client : MonoBehaviour
     string latestSender;
     KeyValuePair<string, Vector3> latestVector = new KeyValuePair<string, Vector3>();
     KeyValuePair<string, Ray> latestRay = new KeyValuePair<string, Ray>();
+    KeyValuePair<string, float> latestDecimal = new KeyValuePair<string, float>();
     bool isNAM;
     bool isVEC;
     bool isRAY;
+    bool isDEC;
 
     private void Awake()
     {
@@ -106,6 +108,11 @@ public class Client : MonoBehaviour
 
         SpawnSelfPlayer();
         onPlayerSpawned();
+    }
+
+    public void HandleDisconnection ()
+    {
+
     }
 
     void SpawnSelfPlayer()
@@ -176,6 +183,16 @@ public class Client : MonoBehaviour
         stream.Close();
     }
 
+    public void SendDecimal (float number)
+    {
+        NetworkStream stream = new NetworkStream(socket);
+
+        byte[] decimalBytes = GetSelfPlayerName().Concat(DataPacketConvertor.GetBytes(number)).ToArray();
+        stream.Write(decimalBytes, 0, decimalBytes.Length);
+
+        stream.Close();
+    }
+
     void InstantiateIncommingPlayer(string _name)
     {
         if (playerNamesList.Contains(_name))
@@ -211,6 +228,17 @@ public class Client : MonoBehaviour
             if (p.GetOtherName() == ray.Key)
             {
                 p.SetOtherRay(ray.Value);
+            }
+        }
+    }
+
+    void SetOtherPlayerDecimal(KeyValuePair<string, float> dec)
+    {
+        foreach (OtherPlayer p in otherPlayers)
+        {
+            if (p.GetOtherName() == dec.Key)
+            {
+                p.SetOtherHealth(dec.Value);
             }
         }
     }
@@ -273,6 +301,15 @@ public class Client : MonoBehaviour
                 latestRay = new KeyValuePair<string, Ray>(senderName, DataPacketConvertor.GetRay(dataBytes));
                 isRAY = true;
             }
+
+            if (type == "DEC")
+            {
+                byte[] dataBytes = new byte[4];
+                int bytesRead = stream.Read(dataBytes, 0, dataBytes.Length);
+
+                latestDecimal = new KeyValuePair<string, float>(senderName, DataPacketConvertor.GetFloat(dataBytes));
+                isDEC = true;
+            }
         }
     }
 
@@ -327,6 +364,12 @@ public class Client : MonoBehaviour
         {
             SetOtherPlayerRay(latestRay);
             isRAY = false;
+        }
+
+        if (isDEC)
+        {
+            SetOtherPlayerDecimal(latestDecimal);
+            isDEC = false;
         }
     }
 }

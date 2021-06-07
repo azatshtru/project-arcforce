@@ -1,5 +1,5 @@
-float DEC
-vector VEC
-ray RAY
-string STR
-name NAM
+float DEC (being used)
+vector VEC (being used)
+ray RAY (being used)
+string STR 
+name NAM (being used)
