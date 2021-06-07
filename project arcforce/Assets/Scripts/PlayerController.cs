@@ -59,7 +59,9 @@ public class PlayerController : MonoBehaviour
 
     private void Shoot(Vector3 lookDir)
     {
-        //GameObject bulletGO = Instantiate(bulletPrefab, transform.position, Quaternion.LookRotation(lookDir, Vector3.forward));
-        //bulletGO.GetComponent<Bullet>().SetOwner(gameObject);
+        GameObject bulletGO = Instantiate(bulletPrefab, transform.position, Quaternion.LookRotation(lookDir, Vector3.forward));
+        bulletGO.GetComponent<Bullet>().SetOwner(gameObject);
+
+        Client.Instance.SendRay(new Ray(transform.position, lookDir));
     }
 }

@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 3345882060370877973}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -109,9 +109,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   syncInterval: 0.03
-  colorList:
-  - {r: 1, g: 0.50707024, b: 0.1372549, a: 1}
-  - {r: 0.25, g: 0.65356266, b: 1, a: 1}
 --- !u!114 &2568142408982970204
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -126,7 +123,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   forceMagnitude: 25
   gravitationalAcceleration: 100
-  bulletPrefab: {fileID: 0}
+  bulletPrefab: {fileID: 3270560238208439009, guid: 0d6d36de30344cf4da96e0cab445ca32,
+    type: 3}
 --- !u!54 &3345882060370877973
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -142,4 +140,4 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 56
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1

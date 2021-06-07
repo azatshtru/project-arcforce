@@ -38,8 +38,10 @@ public class Client : MonoBehaviour
 
     string latestSender;
     KeyValuePair<string, Vector3> latestVector = new KeyValuePair<string, Vector3>();
+    KeyValuePair<string, Ray> latestRay = new KeyValuePair<string, Ray>();
     bool isNAM;
     bool isVEC;
+    bool isRAY;
 
     private void Awake()
     {
@@ -164,6 +166,16 @@ public class Client : MonoBehaviour
         udpClient.Send(vectorBytes, vectorBytes.Length);
     }
 
+    public void SendRay (Ray ray)
+    {
+        NetworkStream stream = new NetworkStream(socket);
+
+        byte[] rayBytes = GetSelfPlayerName().Concat(DataPacketConvertor.GetBytes(ray)).ToArray();
+        stream.Write(rayBytes, 0, rayBytes.Length);
+
+        stream.Close();
+    }
+
     void InstantiateIncommingPlayer(string _name)
     {
         if (playerNamesList.Contains(_name))
@@ -188,6 +200,17 @@ public class Client : MonoBehaviour
             if(p.GetOtherName() == vec.Key)
             {
                 p.SetOtherPosition(vec.Value);
+            }
+        }
+    }
+
+    void SetOtherPlayerRay(KeyValuePair<string, Ray> ray)
+    {
+        foreach (OtherPlayer p in otherPlayers)
+        {
+            if (p.GetOtherName() == ray.Key)
+            {
+                p.SetOtherRay(ray.Value);
             }
         }
     }
@@ -241,6 +264,15 @@ public class Client : MonoBehaviour
 
                 isNAM = true;
             }
+
+            if (type == "RAY")
+            {
+                byte[] dataBytes = new byte[24];
+                int bytesRead = stream.Read(dataBytes, 0, dataBytes.Length);
+
+                latestRay = new KeyValuePair<string, Ray>(senderName, DataPacketConvertor.GetRay(dataBytes));
+                isRAY = true;
+            }
         }
     }
 
@@ -289,6 +321,12 @@ public class Client : MonoBehaviour
         {
             SetOtherPlayerPosition(latestVector);
             isVEC = false;
+        }
+
+        if (isRAY)
+        {
+            SetOtherPlayerRay(latestRay);
+            isRAY = false;
         }
     }
 }
